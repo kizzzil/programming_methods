@@ -16,5 +16,5 @@ void oddEvenSorting(T (&array)[N]) {
 
 int main()
 {
-	cout << "Helloo";
+	cout << "Hello world!";
 }
