@@ -1,14 +1,14 @@
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
-template <typename T, size_t N >
-void oddEvenSorting(T (&array)[N]) {
-	for (size_t i = 0; i < N; i++) {
-	    // (i % 2) ? 0 : 1 возвращает 1, если i четное, 0, если i не четное
-		for (size_t j = (i % 2) ? 0 : 1; j + 1 < N; j += 2) {
-			if (array[j] > array[j + 1]) {
-				std::swap(array[j], array[j + 1]);
+void oddEvenSorting(vector<int>& vec) {
+	int n = vec.size();
+	for (size_t i = 0; i < n; i++) {
+		for (size_t j = (i % 2) ? 0 : 1; j + 1 < n; j += 2) {
+			if (vec[j] > vec[j + 1]) {
+				swap(vec[j], vec[j + 1]);
 			}
 		}
 	}
@@ -16,5 +16,23 @@ void oddEvenSorting(T (&array)[N]) {
 
 int main()
 {
-	cout << "Helloo";
+
+	int n = 100;
+
+	// srand(time(NULL));
+
+	vector<int> a; 
+
+	for (int i = 0; i < n; i++)
+	{
+		a.push_back(rand());
+	}
+
+	oddEvenSorting(a);
+
+	for (int i = 0; i < n; i++)
+	{
+		cout << a[i] << "\n";
+	}
+	
 }
