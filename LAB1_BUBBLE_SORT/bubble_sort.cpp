@@ -12,19 +12,18 @@ mutex mtx;
 
 auto handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
-// устанавливает курсор в консоли на указанную позицию
-void set_cursor(int x, int y)
-{
-    SetConsoleCursorPosition(handle, { static_cast<SHORT>(x), static_cast<SHORT>(y) });
-}
-
+// Отрисовка progress bar'a  (Работает неидеальано, но со своей задачей справляется)
 void render_progress_bar(int x, int y, int width, double progress, char fill_symbol)
 {
+	// Колличество пустных полей и полей с симоволом 
     int fill_w = static_cast<int>(width * progress);
     int empty_w = width - fill_w;
 
-    set_cursor(x, y);
+	// Установка курсора в конкретную область
+    SetConsoleCursorPosition(handle, { static_cast<SHORT>(x), static_cast<SHORT>(y) });
 
+	// Ограничение вывода в консоль
+	mtx.lock();
 	cout << "Sorting progress [";
 
     for (int i = 0; i < fill_w; ++i)
@@ -34,59 +33,26 @@ void render_progress_bar(int x, int y, int width, double progress, char fill_sym
         std::cout << " ";
 
 	cout << "]" << "\n";
+	mtx.unlock();
 }
 
-void odd(vector<int>& vec){
+// Функция сортировки пузырьком
+void oddEvenSorting(vector<int>& vec, int y) {
 	int n = vec.size();
-	for (size_t j = 0; j + 1 < n; j += 2) {
-		if (vec[j] > vec[j + 1]) {
-			mtx.lock();
-			swap(vec[j], vec[j + 1]);
-			mtx.unlock();
-		}
-	}
-}
 
-void even(vector<int>& vec){
-	int n = vec.size();
-	for (size_t j = 1; j + 1 < n; j += 2) {
-		if (vec[j] > vec[j + 1]) {
-			mtx.lock();
-			swap(vec[j], vec[j + 1]);
-			mtx.unlock();
-		}
-	}
-}
-
-void ParallelOddEvenSorting(vector<int>& vec) {
-	int n = vec.size();
+	// Данные для работы progress bar'a 
+	// width - длина progress bar'a 
+	// checkpoint - момент, в которые нам нужно обновлять progress bar
 	int width = 35;
-	int k = n > width ? n / width : width / n;
-	
-	for (size_t i = 0; i < n; i++){
-		if (i % k == 0 || i == n - 1){
-			render_progress_bar(0, 0, width, (1.0 * i / (n - 1)), '*');
-		}
-		if (i % 2 == 0){
-			// odd(vec, n);
-			thread(odd, ref(vec)).join();
-		}
-		else{
-			// even(vec, n);
-			thread(even, ref(vec)).join();
-		}
-	}
-}
+	int checkpoint = n > width ? n / width : width / n;
 
-void oddEvenSorting(vector<int>& vec) {
-	int n = vec.size();
-	int width = 35;
-	int k = n > width ? n / width : width / n;
-	for (size_t i = 0; i < n; i++) {
-		if (i % k == 0 || i == n - 1){
-			render_progress_bar(0, 2, width, (1.0 * i / (n - 1)),'*');
+	for (int i = 0; i < n; i++) {
+		// Отрисовка progress bar'a
+		if (i % checkpoint == 0 || i == n - 1){
+			render_progress_bar(0, y, width, (1.0 * i / (n - 1)),'*');
 		}
-		for (size_t j = (i % 2) ? 0 : 1; j + 1 < n; j += 2) {
+		// Сама сортировка 
+		for (int j = (i % 2) ? 0 : 1; j + 1 < n; j += 2) {
 			if (vec[j] > vec[j + 1]) {
 				swap(vec[j], vec[j + 1]);
 			}
@@ -95,9 +61,60 @@ void oddEvenSorting(vector<int>& vec) {
 }
 
 
-void intiliazation(vector<int>& vec,vector<int>& pvec, int n){
+// Функция параллельной сортировки пузырьком
+void ParallelOddEvenSorting(vector<int>& vec) {
+	// Колличество тредов
+	int thK = 2;
+	int n = vec.size();
+
+	// Аналогично коду в oddEvenSorting
+	int width = 35;
+	int k = n > width ? n / width : width / n;
+
+	// Вектора для параллеливания 
+	vector<vector<int>> elemVector;
+	vector<thread> threads;
+	
+	// Создание и заполнение массива чётных и нечётных
+	for (int i = 0; i < thK; i++){
+		vector<int> a;
+		elemVector.push_back(a);
+	}
+
+	for (int i = 0; i < n; i++){
+		elemVector[i%thK].push_back(vec[i]);
+	}
+
+	// Создание и помещение тредов для удобной работы
+	for (size_t i = 0; i < thK; i++){
+		threads.push_back(move(thread(oddEvenSorting, ref(elemVector[i]), i)));
+	}
+
+	// Присоединение тредов, для того чтобы ждать их
+	for (int i = 0; i < threads.size(); i++){
+		threads[i].join();
+	}
+	
+	// Возвращение отсортированных чётных и нечётных векторов
+	for (int i = 0; i < n; i++){
+		if (i % 2 == 0){
+			vec[i] = elemVector[0][i/2];
+		}
+		else{
+			vec[i] = elemVector[0][i/2];
+		}
+	}
+
+	// Последний проход по вектору для полной сортировки пришедших данных
+	thread(oddEvenSorting, ref(vec), 2).join();
+
+}
+
+
+// Функция заполнения векторов случайными велечинами
+void intiliazation(vector<int>& vec, vector<int>& pvec, int n){
 	// Для разнообразныхэлементов
-	srand(time(NULL));
+	// srand(time(NULL));
 
 	for (int i = 0; i < n; i++)
 	{
@@ -107,6 +124,7 @@ void intiliazation(vector<int>& vec,vector<int>& pvec, int n){
 	}
 }
 
+// Функция вывода вектор
 void printVector(vector<int> vec){
 	for (int i = 0; i < vec.size(); i++)
 	{
@@ -114,28 +132,49 @@ void printVector(vector<int> vec){
 	}
 }
 
-void printEL(){
-	for (int i = 0; i < 100; i++){
-		cout << "elem" << "\n";
-	}
+// Функция запуска Параллельной реализации 
+void runParallel(vector<int>& vec, double& time){
+	clock_t begin = clock();
+	ParallelOddEvenSorting(vec);
+    clock_t end = clock();
+	time = (double) end - begin;
 }
 
-const int n = 10000;
+// Функция запуска Последовательной реализации 
+void  runSequential(vector<int>& vec, double& time){
+	clock_t begin = clock();
+	oddEvenSorting(vec, 3);
+    clock_t end = clock();
+	time = (double) end - begin;
+}
+
+
 
 int main()
 {	
+	// Коллличество элементов 
+	const int n = 50000;
+
 	vector<int> vec; 
 	vector<int> pvec;
+	// Заполнение вектором случайными данными
 	intiliazation(vec,pvec, n);
+	// Очистка консоли
 	system ("cls");
 
-	clock_t begin = clock();
-	ParallelOddEvenSorting(pvec);
-    clock_t end = clock();
-    printf("Sorting time is %f for %d elements - Parallel method\n", (double)(end - begin) / CLOCKS_PER_SEC, n);
+	// Время выполнения 
+	double time1 = 0;
+	double time2 = 0;
 
-	begin = clock();
-	oddEvenSorting(vec);
-    end = clock();
-	printf("Sorting time is %f for %d elements - Sequential method\n", (double)(end - begin) / CLOCKS_PER_SEC, n);
+	// Запуск тредов с Параллельной реализацией и Последовательной реализацией
+	thread thread1(runParallel, ref(pvec), ref(time1));
+	thread thread2(runSequential, ref(vec), ref(time2));
+
+	// Ожидание выволнения прцессов в треде
+	thread1.join();
+	thread2.join();
+
+	// Вывод результатов работы
+	printf("Sorting time is %f for %d elements - Parallel method\n", time1 / CLOCKS_PER_SEC, n);
+	printf("Sorting time is %f for %d elements - Sequential method\n", time2 / CLOCKS_PER_SEC, n);
 }
