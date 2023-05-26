@@ -1,2 +1,4 @@
-bubble_sort.exe
+# bubble_sort.exe
 .vscode
+*.exe
+chver.cpp

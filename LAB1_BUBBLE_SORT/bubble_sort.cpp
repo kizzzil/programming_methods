@@ -4,13 +4,33 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
-#include <Windows.h> 
+#include <fstream>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
 mutex mtx;
 
-auto handle = GetStdHandle(STD_OUTPUT_HANDLE);
+// Считывание данных из конфигурациоонного файла
+int getNumberOfElemetsFromConfig(){
+	int n;
+	ifstream configFile("config.txt");
+	string line;
+	getline(configFile, line);
+	istringstream ss(line);
+	string tmp;
+	while(ss >> tmp){
+		try {
+            int value = std::stoi(tmp);
+            n = value;
+            break;
+        } catch (const std::exception& e) {
+        }
+	}
+	configFile.close();
+	return n;
+}
 
 // Функция сортировки пузырьком
 void oddEvenSorting(vector<int>& vec) {
@@ -143,8 +163,9 @@ void  runSequential(vector<int>& vec, double& time){
 
 int main()
 {	
-	// Коллличество элементов 
-	const int n = 30000;
+	// Количество элементов 
+
+	const int n = getNumberOfElemetsFromConfig();
 
 	vector<int> vec; 
 	vector<int> pvec;
