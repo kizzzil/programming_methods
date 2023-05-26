@@ -13,7 +13,7 @@ public:
         return confMap[param];
     }
     Config(){
-        ifstream configFile;("config.txt");
+        ifstream configFile("config.txt");
         string line;
         while (getline(configFile, line)){
             int pos = line.find('=');
