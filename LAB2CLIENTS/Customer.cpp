@@ -7,6 +7,6 @@ public:
         return ticket;
     }
     Customer(int ticket){
-        this->ticket = ticket
+        this->ticket = ticket;
     }
 };
