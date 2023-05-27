@@ -41,12 +41,12 @@ private:
     }
 
 
+    // Появление новых посетителей с некоторой задержкой 
     void customersGenetator(mutex &mutex){
         for (int i = 0; i < maxCustomerAmount; i++){
             int timeInterval = generateRandomNumber(minCustomerArrivalTime, maxCustomerArrivalTime);
             this_thread::sleep_for(chrono::milliseconds(timeInterval));
             Customer customer = generateCustomer(ticketingMachine);
-            // ОБработать лок 
             mutex.lock();
             queueOfCustomers.push(customer);
             mutex.unlock();
@@ -55,6 +55,7 @@ private:
         logger.log("Closed for new customers, only those in the queue will be served.");
     }
 
+    // Обслуживание
     void serveCustomer(Customer &customer, int deskNumber, mutex& mutex){
         int serviceTime = generateRandomNumber(minCustomerArrivalTime, maxCustomerArrivalTime);
         this_thread::sleep_for(chrono::milliseconds(serviceTime));
@@ -70,7 +71,6 @@ public:
     Office(){
             // Конфигурационные данные 
         Config config = Config();
-
         this->ticketingMachine = TicketingMachine(config.getConfMap("INITIAL_NUMBER"));
         this->logger = Logger();
         this->queueOfCustomers = queue<Customer>();
@@ -89,15 +89,15 @@ public:
         vector<bool> busyDesks(amountOfDesks, false);
         cout << "Office opened, welcome!\nToday there are " << amountOfDesks << " desks in the office and it will be able to take "<< maxCustomerAmount <<" customers.\n";
 
-        for(int i = 0; i < amountOfDesks; i++){
-            logger.log("Desk N" + to_string(i+1) + " active.");
-            // desks.push_back(thread i);
-        }
+        // for(int i = 0; i < amountOfDesks; i++){
+            
+        //     // desks.push_back(thread i);
+        // }
 
-        thread customers([&]{
-            customersGenetator(mutex);
-        });
-        // customersGenetator(mutex);
+        // thread customers([&]{
+        //     customersGenetator(mutex);
+        // });
+        customersGenetator(mutex);
 
         // while(servedCustomer < maxCustomerAmount){
         //     if (!queueOfCustomers.empty()){
@@ -117,9 +117,9 @@ public:
 
         for (int i = 0; i < amountOfDesks; ++i) {
             desks.emplace_back([&, i]() {
-            logger.log("Table " + std::to_string(i + 1) + " opened.");
+            logger.log("Desk N" + to_string(i+1) + " active.");
             while (!queueOfCustomers.empty()) { 
-                std::unique_lock<std::mutex> lock(mutex);
+                unique_lock<std::mutex> lock(mutex);
                 // cv.wait(lock, [&]() { return customersServed < numCustomers; });
 
                 // if (servedCustomer >= maxCustomerAmount) {
@@ -128,6 +128,7 @@ public:
 
                 // mutex.lock();
                 Customer customer = queueOfCustomers.front();
+                queueOfCustomers.pop();
                 lock.unlock();
                 serveCustomer(customer, i + 1, mutex);
             }
@@ -144,11 +145,13 @@ public:
         // for (int i = 0; i < amountOfDesks; ++i) {
         //     thread()
         // }
+
         // Дожидаемся завершения всех потоков
-        // for_each(threads.begin(), threads.end(), [](thread& t) {
-        //     t.join();
-        // });
+        for_each(desks.begin(), desks.end(), [](thread& t) {
+            t.join();
+        });
+
         // customers.join();
-        cout << "Office closed, see you tommorow.";
+        logger.log("Office closed, see you tommorow.");
     }
 };
