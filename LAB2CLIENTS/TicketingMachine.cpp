@@ -5,6 +5,7 @@ private:
     int currentNumberOfTicket;
 public:
     int giveTicket(){
+        // lock_guard<mutex> lock(mutex);
         return currentNumberOfTicket++;
     } 
 
