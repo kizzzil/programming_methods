@@ -4,8 +4,9 @@ private:
     /* data */
 public:
     int getTicketNumber(){
-        return ticket;
+        return  this->ticket;
     }
+
     Customer(int ticket){
         this->ticket = ticket;
     }

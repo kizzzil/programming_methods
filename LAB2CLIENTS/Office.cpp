@@ -104,6 +104,7 @@ public:
                 if (!queueOfCustomers.empty()){
                     mutex.lock();
                     Customer customer = queueOfCustomers.front();
+                    // cout << "1:" << customer.getTicketNumber() << "\n";
                     queueOfCustomers.pop();
                     mutex.unlock();
                     serveCustomer(customer, i + 1, mutex);

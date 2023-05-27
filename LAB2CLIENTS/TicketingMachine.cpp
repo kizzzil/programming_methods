@@ -6,7 +6,10 @@ private:
 public:
     int giveTicket(){
         // lock_guard<mutex> lock(mutex);
-        return currentNumberOfTicket++;
+        int i = currentNumberOfTicket++;
+        // cout << i << "\n";
+        // return currentNumberOfTicket++;
+        return i;
     } 
 
     TicketingMachine(int initialNumber){
