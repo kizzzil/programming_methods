@@ -25,7 +25,7 @@ private:
     int amountOfDesks;
     Logger logger;
     TicketingMachine ticketingMachine;
-    queue<Customer> queueOfCustomers;
+    queue<int> queueOfCustomers;
     // int 
 
     int generateRandomNumber(int min, int max) {
@@ -41,10 +41,11 @@ private:
             mutex.lock();
             int timeInterval = generateRandomNumber(minCustomerArrivalTime, maxCustomerArrivalTime);
             this_thread::sleep_for(chrono::milliseconds(timeInterval));
-            Customer customer = Customer(ticketingMachine.giveTicket());
-            queueOfCustomers.push(customer);
+            // Customer customer = Customer(ticketingMachine.giveTicket());
+            int ticket = ticketingMachine.giveTicket();
+            queueOfCustomers.push(ticket);
             mutex.unlock();
-            logger.log("Arrive new customer with Ticket N" + to_string(customer.getTicketNumber()));
+            logger.log("Arrive new customer with Ticket N" + to_string(ticket));
         }
         logger.log("Closed for new customers, only those in the queue will be served.");
     }
@@ -80,7 +81,7 @@ public:
         Config config = Config();
         this->ticketingMachine = TicketingMachine(config.getConfMap("INITIAL_NUMBER"));
         // this->logger = Logger();
-        this->queueOfCustomers = queue<Customer>();
+        this->queueOfCustomers = queue<int>();
         this->maxCustomerAmount = config.getConfMap("MAX_CUSTOMER_AMOUNT");
         this->amountOfDesks = config.getConfMap("AMOUNT_OF_DESKS");
         this->minCustomerArrivalTime = config.getConfMap("MIN_CUSTOMER_ARRIVAL_TIME");
@@ -90,7 +91,7 @@ public:
     }
 
     
-    void simulateOffice(){
+    int simulateOffice(){
         vector<thread> desks;
         vector<bool> busyDesks(amountOfDesks, false);
         cout << "Office opened, welcome!\nToday there are " << amountOfDesks << " desks in the office and it will be able to take "<< maxCustomerAmount <<" customers.\n";
@@ -104,14 +105,25 @@ public:
             desks.emplace_back([&, i]() {
             logger.log("Desk N" + to_string(i+1) + " active.");
             while (isTooManyCustomers()) { 
-                if (isCustomerWaiting()){
-                    mutex.lock();
-                    Customer customer = queueOfCustomers.front();
-                    // cout << "1:" << customer.getTicketNumber() << "\n";
-                    queueOfCustomers.pop();
-                    mutex.unlock();
-                    serveCustomer(customer, i + 1);
+                unique_lock<std::mutex> lock(mutex);
+                if (queueOfCustomers.empty()){
+                    lock.unlock();
+                    break;
                 }
+                else{
+                    Customer customer = queueOfCustomers.front();
+                    queueOfCustomers.pop();
+                    lock.unlock();
+                    serveCustomer(customer, i + 1);
+                }    
+                    
+                    // cout << "1:" << customer.getTicketNumber() << "\n";
+                    
+                // mutex.unlock();
+                // if (customer.getTicketNumber() >= 0){
+                    
+                // }
+
             }
 
             logger.log("Desk " + std::to_string(i + 1) + " closed.");
@@ -137,5 +149,7 @@ public:
         // customers.join();
         logger.log("Office closed, see you tommorow.");
         logger.log(to_string(servedCustomer));
+        return servedCustomer;
+
     }
 };
