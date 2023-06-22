@@ -1,4 +1,4 @@
 # Методы программирования
 Реализация задач на C++ с применением методов параллельного программирования.
 
-![None](https://otvet.imgsmail.ru/download/179457519_d820dcc8f742979214522f1592c37cec_800.gif)
+![None](https://i.vimeocdn.com/video/32417161-60c72e2976147be40c622bb7098ada20ab4b16b60121becfb46f707c9f86462b-d)
