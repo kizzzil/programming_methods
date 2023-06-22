@@ -108,7 +108,7 @@ public:
                 unique_lock<std::mutex> lock(mutex);
                 if (queueOfCustomers.empty()){
                     lock.unlock();
-                    break;
+                    continue;
                 }
                 else{
                     Customer customer = queueOfCustomers.front();
@@ -148,8 +148,6 @@ public:
 
         // customers.join();
         logger.log("Office closed, see you tommorow.");
-        logger.log(to_string(servedCustomer));
         return servedCustomer;
-
     }
 };
